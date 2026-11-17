@@ -1,3 +1,100 @@
+.module-preparation {
+  margin-top: 24px;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fffdf7;
+}
+.module-preparation h4 {
+  margin-top: 20px;
+  font-size: 1.3rem;
+}
+.module-preparation p,
+.module-preparation li,
+.module-preparation summary {
+  font-size: 0.85rem;
+}
+.module-preparation .form-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+}
+.module-preparation select {
+  width: 100%;
+  min-width: 0;
+}
+.upgrade-market {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+.upgrade-card {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-top: 4px solid var(--green);
+  border-radius: 8px;
+  background: var(--paper);
+  display: flex;
+  flex-direction: column;
+}
+.upgrade-card .eyebrow {
+  font-size: 0.6rem;
+}
+.upgrade-card h4 {
+  margin-top: 12px;
+}
+.upgrade-card ul {
+  padding-left: 16px;
+  flex: 1;
+}
+.upgrade-card li {
+  margin-bottom: 8px;
+  font-size: 0.75rem;
+}
+.upgrade-speed,
+.draft-turn {
+  font-weight: 700;
+  color: var(--green);
+}
+.road-conditions {
+  padding-left: 20px;
+}
+.road-conditions li {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.road-conditions span {
+  display: block;
+  margin-top: 6px;
+}
+.road-conditions p {
+  margin: 6px 0 0;
+}
+.garage-swap {
+  padding: 16px;
+  background: #ecefe5;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+.driver-upgrades,
+.preparation-history {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.driver-upgrades summary,
+.preparation-history summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.preparation-history > summary {
+  padding: 0 16px;
+}
+@media (max-width: 600px) {
+  .module-preparation {
+    padding: 16px;
+  }
+}
 :root {
   font-family: 'DM Sans', system-ui, sans-serif;
   color: #243a35;

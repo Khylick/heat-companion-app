@@ -23,6 +23,7 @@ Si les exécutables `node` et `npm` indiquent qu’aucune version n’est active
 - Calendrier et première grille reproductibles à partir d’une graine.
 - Configuration Legends : niveaux 1 à 6, progression facultative et module Rivaux.
 - Préparation de la grille suivante et désignation des rivaux à partir du classement.
+- Modules Garage et Météo/État de la piste du jeu de base : tirages et choix sauvegardés, améliorations conservées entre les courses.
 - Saisie et correction des arrivées, calcul des points et départages.
 - Plusieurs championnats, suppression avec confirmation, export/import JSON et sauvegarde locale.
 - Interface responsive, sans ressource distante nécessaire au fonctionnement.
@@ -32,6 +33,9 @@ Les emplacements de couleur identifient les pilotes dans l’application ; leur 
 ## Architecture
 
 - `src/domain/catalog.ts` : catalogue des circuits et couleurs.
+- `src/domain/upgrades.ts`, `base-tracks.ts` et `weather.ts` : données des modules du jeu de base.
+- `src/domain/preparation.ts` : préparation des courses, marché, choix et échanges du Garage, validation des préparations importées.
+- `src/ModulePreparation.tsx` : interface de préparation et historique des modules.
 - `src/domain/championship.ts` : règles et calculs, indépendants de React et du navigateur, hormis la génération des identifiants avec Web Crypto.
 - `src/storage.ts` : bibliothèque versionnée, validation des imports et accès à `localStorage`.
 - `src/App.tsx` : navigation et gestion de la bibliothèque.
@@ -41,6 +45,29 @@ Les emplacements de couleur identifient les pilotes dans l’application ; leur 
 Le barème est conservé dans chaque championnat : **9, 6, 4, 3, 2, 1, puis 0**. À égalité de points, le résultat de la dernière course disputée départage les participants. Une correction recalcule les totaux et les grilles, tout en conservant les arrivées des courses suivantes.
 
 Les données sont propres au navigateur et à l’origine utilisée (hôte et port). Un autre port ne retrouve pas la même bibliothèque. Exporter régulièrement les sauvegardes : effacer les données du navigateur les supprime. Un import n’écrase aucun championnat existant ; les identifiants en double sont refusés. Une sauvegarde corrompue est préservée jusqu’à autorisation explicite de remplacement.
+
+## Garage, météo et état de la piste
+
+À la création d’un championnat, choisir le Garage (ordinaires, avancées ou les deux) et/ou la météo. Ces modules sont limités aux quatre circuits du jeu de base. Le catalogue des extensions reste disponible pour les championnats sans ces modules. Les anciens championnats sont conservés avec les modules désactivés.
+
+Avant chaque course, cliquer sur **Préparer la course**. Le tirage est déterminé par la graine du championnat et le numéro de course, puis enregistré : recharger la page ne change ni le marché ni la météo. Les jetons météo et piste sont remis dans leurs réserves entre les courses.
+
+Le Garage suit le fonctionnement en championnat : une amélioration par pilote humain et par course, marché de nombre d’humains + 3 cartes, choix en ordre inverse de la grille en ignorant les Légendes. Le dernier humain peut ensuite échanger une carte qu’il possède, y compris celle qu’il vient de choisir, avec une carte restante. Terminer avec ou sans échange pour déverrouiller la saisie de l’arrivée. Les cartes restantes et la carte rendue redeviennent disponibles pour les courses suivantes ; les cartes conservées ne peuvent pas être retirées dans le marché. Les 48 références sont représentées par leurs deux exemplaires distincts. Le Garage accepte jusqu’à six pilotes humains.
+
+En championnat, la météo et l’état de la piste sont révélés après les choix du Garage. La météo indique les quantités de Heat et Stress à préparer et la répartition du Heat entre moteur, paquet et défausse. Chaque virage reçoit un jeton État de la piste, tiré sans remise parmi les douze exemplaires. Les effets de secteur s’appliquent après le virage indiqué jusqu’au suivant ; les limites modifiées sont affichées. Les effets de météo sur les secteurs ne s’appliquent qu’aux secteurs portant un jeton Météo.
+
+Les améliorations sont conservées entre les courses. Les préparations des courses terminées restent consultables dans le calendrier. Une correction d’arrivée recalcule les points ; la grille et les choix d’une course déjà préparée restent figés pour conserver ce qui a effectivement été joué. Les nouvelles courses utilisent le classement corrigé.
+
+L’application gère les tirages, les attributions et les effets à consulter. Les mains de cartes, leurs effets pendant les manches et les déplacements restent résolus avec le matériel physique. Les Sponsors, les Événements et les saisons historiques ne sont pas encore automatisés.
+
+Sources utilisées pour ce lot :
+
+- `Heat-AdJ_Referentiel_ameliorations_v1.0_20250325.pdf`, p. 2 : noms, numéros, vitesses et effets des améliorations 1 à 48. Les évaluations communautaires de puissance ne sont pas utilisées.
+- `Heat-AdJ_Referentiel_circuits_v2.0_20260729.pdf`, p. 2 : tours, cases, limites des virages et réserves des quatre circuits de base.
+- [Livret officiel avancé français](https://cdn.svc.asmodee.net/production-daysofwonder/uploads/2025/03/9121-HT-RulesAdvanced-FR_compressed.pdf), p. 6–9 : règles de météo, piste et Garage en championnat.
+- [Images des jetons de l’adaptation BGA](https://github.com/bga-devs/bga-heat/tree/2d87584c814025735fdc627c9a7d76378b17dec9/img) : vérification visuelle des associations entre préparation et effet de secteur des six météos. Aucune image ni code de cette adaptation n’est intégré au projet.
+
+Les PDF fournis sont des sources documentaires et ne sont pas copiés dans le dépôt.
 
 ## Règles Legends prises en compte
 
@@ -79,4 +106,4 @@ L’audit npm exécuté pendant le développement signale **7 alertes modérées
 
 ## Prochain lot
 
-Implémenter l’assistant de manche Legends : suivi des paquets, Manœuvres, adrénaline, capacités Étoile et Rival, Légendes agressives et interactions météo/piste. Les cartes, événements, garage, sponsors et déplacements restent actuellement gérés sur table. Les saisons historiques, la synchronisation entre appareils et l’installation PWA restent à développer.
+Compléter les catalogues des Sponsors et Événements pour automatiser leurs tirages et leur suivi. Implémenter l’assistant de manche Legends : suivi des paquets, Manœuvres, adrénaline, capacités Étoile et Rival, Légendes agressives et interactions météo/piste. Les effets des cartes pendant les manches et les déplacements restent gérés sur table. Les saisons historiques, la synchronisation entre appareils et l’installation PWA restent à développer.

@@ -1,5 +1,10 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import {
+  modulesEnabled,
+  type ModuleSettings,
+  type GarageMode,
+} from './domain/module-settings'
+import {
   CAR_COLORS,
   CIRCUITS,
   EXPANSIONS,
@@ -102,6 +107,22 @@ export function ChampionshipForm({
   const [progressive, setProgressive] = useState(false)
   const [rivals, setRivals] = useState(false)
   const [error, setError] = useState('')
+  const [modules, setModules] = useState<ModuleSettings>({
+    garage: 'off',
+    weather: false,
+  })
+  function updateModules(next: ModuleSettings) {
+    if (modulesEnabled(next) && !modulesEnabled(modules)) {
+      const baseIds = CIRCUITS.filter(
+        (circuit) => circuit.expansion === 'base',
+      ).map((circuit) => circuit.id)
+      const selected = circuitIds.filter((id) => baseIds.includes(id))
+      const nextIds = selected.length ? selected : baseIds
+      setCircuitIds(nextIds)
+      setRaceCount(Math.min(raceCount, nextIds.length))
+    }
+    setModules(next)
+  }
   const legends = participants.filter(
     (participant) => participant.kind === 'legend',
   ).length
@@ -136,6 +157,7 @@ export function ChampionshipForm({
               circuitIds,
               raceCount,
               legendSettings: { difficulty, progressive, rivals },
+              modules,
             })
             if (onCreate(championship)) onClose()
             else
@@ -291,6 +313,9 @@ export function ChampionshipForm({
                 <input
                   type="checkbox"
                   checked={circuitIds.includes(circuit.id)}
+                  disabled={
+                    modulesEnabled(modules) && circuit.expansion !== 'base'
+                  }
                   onChange={(event) =>
                     setCircuitIds(
                       event.target.checked
@@ -346,9 +371,44 @@ export function ChampionshipForm({
             déplacements et les cartes restent gérés sur table.
           </p>
         </fieldset>
+        <fieldset>
+          <legend>04 / Modules du jeu de base</legend>
+          <label>
+            Garage
+            <select
+              value={modules.garage}
+              onChange={(event) =>
+                updateModules({
+                  ...modules,
+                  garage: event.target.value as GarageMode,
+                })
+              }
+            >
+              <option value="off">Désactivé</option>
+              <option value="regular">Améliorations ordinaires</option>
+              <option value="advanced">Améliorations avancées</option>
+              <option value="all">Ordinaires et avancées</option>
+            </select>
+          </label>
+          <label className="check-label">
+            <input
+              type="checkbox"
+              checked={modules.weather}
+              onChange={(event) =>
+                updateModules({ ...modules, weather: event.target.checked })
+              }
+            />
+            Météo et état de la piste
+          </label>
+          <p className="field-help">
+            Ces modules utilisent les quatre circuits du jeu de base. Le Garage
+            gère jusqu’à six pilotes humains, une amélioration par course et les
+            échanges. Les tirages sont sauvegardés.
+          </p>
+        </fieldset>
         <div className="notice">
           Format personnalisé · Barème : 9, 6, 4, 3, 2, 1, puis 0 point. Les
-          événements, le garage et la météo restent gérés sur table.
+          événements et les Sponsors restent gérés sur table.
         </div>
         {error && (
           <p className="error" role="alert">

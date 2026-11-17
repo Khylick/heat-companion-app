@@ -1,4 +1,6 @@
 import { useRef, useState } from 'react'
+import { ModulePreparation } from './ModulePreparation'
+import { modulesEnabled, isRacePrepared } from './domain/module-settings'
 import {
   ChampionshipForm,
   CircuitCatalog,
@@ -138,6 +140,15 @@ export function App() {
       setError(cause instanceof Error ? cause.message : 'Résultat invalide.')
       return false
     }
+  }
+
+  function updateChampionship(updated: Championship): boolean {
+    return persist({
+      ...library,
+      championships: library.championships.map((item) =>
+        item.id === updated.id ? updated : item,
+      ),
+    })
   }
 
   return (
@@ -503,47 +514,73 @@ export function App() {
                                 const unlocked =
                                   index <= nextIndex || nextIndex === -1
                                 return (
-                                  <article
-                                    key={race.id}
-                                    className={`race-card ${index === nextIndex ? 'next-race' : ''}`}
-                                  >
-                                    <span className="race-number">
-                                      {String(index + 1).padStart(2, '0')}
-                                    </span>
-                                    <TrackDrawing circuit={circuit} />
-                                    <div className="grow">
-                                      <p className="eyebrow">
-                                        {race.result
-                                          ? 'TERMINÉE'
-                                          : index === nextIndex
-                                            ? 'PROCHAIN DÉPART'
-                                            : 'À VENIR'}
-                                      </p>
-                                      <h4>{circuit.name}</h4>
-                                      <p className="muted">
-                                        {race.result
-                                          ? `Victoire : ${active.participants.find((participant) => participant.id === race.result?.[0])?.name}`
-                                          : circuit.feature}
-                                      </p>
-                                    </div>
-                                    <button
-                                      className="secondary"
-                                      disabled={!unlocked}
-                                      onClick={() => setEditingRace(index)}
+                                  <div key={race.id}>
+                                    <article
+                                      className={`race-card ${index === nextIndex ? 'next-race' : ''}`}
                                     >
-                                      {race.result
-                                        ? 'Corriger'
-                                        : 'Saisir l’arrivée'}
-                                    </button>
-                                  </article>
+                                      <span className="race-number">
+                                        {String(index + 1).padStart(2, '0')}
+                                      </span>
+                                      <TrackDrawing circuit={circuit} />
+                                      <div className="grow">
+                                        <p className="eyebrow">
+                                          {race.result
+                                            ? 'TERMINÉE'
+                                            : index === nextIndex
+                                              ? 'PROCHAIN DÉPART'
+                                              : 'À VENIR'}
+                                        </p>
+                                        <h4>{circuit.name}</h4>
+                                        <p className="muted">
+                                          {race.result
+                                            ? `Victoire : ${active.participants.find((participant) => participant.id === race.result?.[0])?.name}`
+                                            : circuit.feature}
+                                        </p>
+                                      </div>
+                                      <button
+                                        className="secondary"
+                                        disabled={
+                                          !unlocked ||
+                                          !isRacePrepared(active, index)
+                                        }
+                                        onClick={() => setEditingRace(index)}
+                                      >
+                                        {race.result
+                                          ? 'Corriger'
+                                          : 'Saisir l’arrivée'}
+                                      </button>
+                                    </article>
+                                    {race.preparation && race.result && (
+                                      <details className="preparation-history">
+                                        <summary>
+                                          Préparation de la course {index + 1}
+                                        </summary>
+                                        <ModulePreparation
+                                          championship={active}
+                                          raceIndex={index}
+                                          onUpdate={updateChampionship}
+                                        />
+                                      </details>
+                                    )}
+                                  </div>
                                 )
                               })}
                             </div>
                             {nextIndex !== -1 && (
-                              <RacePreparation
-                                championship={active}
-                                raceIndex={nextIndex}
-                              />
+                              <>
+                                <RacePreparation
+                                  championship={active}
+                                  raceIndex={nextIndex}
+                                />
+                                {modulesEnabled(active.modules) && (
+                                  <ModulePreparation
+                                    key={`${active.id}:${nextIndex}`}
+                                    championship={active}
+                                    raceIndex={nextIndex}
+                                    onUpdate={updateChampionship}
+                                  />
+                                )}
+                              </>
                             )}
                           </div>
                           <Standings championship={active} />
@@ -707,8 +744,9 @@ function RacePreparation({
         </div>
       )}
       <p className="field-help">
-        Préparez les événements, le garage et la météo sur table. L’application
-        n’automatise pas encore les cartes ni les déplacements.
+        {modulesEnabled(championship.modules)
+          ? 'Terminez la préparation des modules ci-dessous avant de saisir l’arrivée. La grille d’une course préparée reste conservée après une correction de résultat.'
+          : 'Les modules sont désactivés pour ce championnat. Préparez le garage et la météo sur table.'}
       </p>
     </section>
   )

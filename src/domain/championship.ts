@@ -1,4 +1,11 @@
 import { CAR_COLORS, CIRCUITS } from './catalog'
+import {
+  modulesEnabled,
+  isRacePrepared,
+  validateModuleCompatibility,
+  type ModuleSettings,
+  type RaceModulePreparation,
+} from './module-settings'
 
 export interface Participant {
   id: string
@@ -11,6 +18,7 @@ export interface Race {
   id: string
   circuitId: string
   result: string[] | null
+  preparation?: RaceModulePreparation
 }
 
 export interface Championship {
@@ -24,6 +32,7 @@ export interface Championship {
   participants: Participant[]
   races: Race[]
   points: number[]
+  modules?: ModuleSettings
 }
 
 export interface Standing {
@@ -152,9 +161,19 @@ export function createChampionship(input: {
   circuitIds: string[]
   raceCount: number
   legendSettings: LegendSettings
+  modules?: ModuleSettings
 }): Championship {
   validateParticipants(input.participants)
   validateLegendSettings(input.legendSettings, input.participants)
+  validateModuleCompatibility({
+    modules: input.modules,
+    participants: input.participants,
+    races: input.circuitIds.map((circuitId) => ({
+      id: '',
+      circuitId,
+      result: null,
+    })),
+  })
   if (!input.name.trim() || input.name.trim().length > 80)
     throw new Error('Le championnat doit avoir un nom de 1 à 80 caractères.')
   if (!input.seed.trim() || input.seed.length > 100)
@@ -198,6 +217,9 @@ export function createChampionship(input: {
       result: null,
     })),
     points: [...DEFAULT_POINTS],
+    ...(modulesEnabled(input.modules)
+      ? { modules: { ...input.modules! } }
+      : {}),
   }
 }
 
@@ -238,6 +260,8 @@ export function getGrid(
   championship: Championship,
   raceIndex: number,
 ): string[] {
+  if (championship.races[raceIndex]?.preparation)
+    return [...championship.races[raceIndex].preparation!.grid]
   if (raceIndex === 0) return initialGrid(championship)
   return getStandings(championship, raceIndex).map(
     (standing) => standing.participant.id,
@@ -258,6 +282,10 @@ export function recordResult(
   if (championship.races.slice(0, raceIndex).some((race) => !race.result))
     throw new Error(
       'Terminez les courses précédentes avant de saisir ce résultat.',
+    )
+  if (!isRacePrepared(championship, raceIndex))
+    throw new Error(
+      'Terminez la préparation des modules avant de saisir l’arrivée.',
     )
   const ids = new Set(
     championship.participants.map((participant) => participant.id),

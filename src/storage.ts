@@ -1,4 +1,5 @@
 import { CAR_COLORS, CIRCUITS } from './domain/catalog'
+import { validatePreparations } from './domain/preparation'
 import {
   validateLegendSettings,
   validateParticipants,
@@ -120,6 +121,7 @@ export function parseLibrary(raw: string): Library {
         throw new Error('Résultats de course invalides.')
       }
     }
+    validatePreparations(item as unknown as Championship)
   }
   return value as unknown as Library
 }
@@ -141,5 +143,7 @@ export function loadLibrary(): { library: Library; error: string | null } {
 }
 
 export function saveLibrary(library: Library): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(library))
+  const raw = JSON.stringify(library)
+  parseLibrary(raw)
+  localStorage.setItem(STORAGE_KEY, raw)
 }
